@@ -154,7 +154,6 @@ public class EmployeeSearchFrame extends JFrame {
         JButton btnClear = new JButton("Clear");
         btnClear.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                //____________Clear________________________
                 // Clear the text area
                 textAreaEmployee.setText("");
                 // Clear the department and project lists
