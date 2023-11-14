@@ -156,6 +156,12 @@ public class EmployeeSearchFrame extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 // Clear the text area
                 textAreaEmployee.setText("");
+                // Clear the department and project lists
+                department.removeAllElements();
+                project.removeAllElements();
+                // Uncheck the "Not" checkboxes
+                chckbxNotDept.setSelected(false);
+                chckbxNotProject.setSelected(false);
             }
         });
         btnClear.setBounds(236, 276, 89, 23);
