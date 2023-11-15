@@ -20,6 +20,11 @@ import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import java.util.Properties;
+import java.io.FileReader;
+import java.sql.*;
+import java.io.IOException;
+import java.util.ArrayList;
 
 public class EmployeeSearchFrame extends JFrame {
 
@@ -31,17 +36,24 @@ public class EmployeeSearchFrame extends JFrame {
     private JList<String> lstProject;
     private DefaultListModel<String> project = new DefaultListModel<String>();
     private JTextArea textAreaEmployee;
+    Connection connection = null;
 
     /**
      * The main method to launch the application.
      */
-    public static void main(String[] args) {
-        EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                try {
+    public static void main(String[] args) 
+    {
+        EventQueue.invokeLater(new Runnable() 
+        {
+            public void run() 
+            {
+                try 
+                {
                     EmployeeSearchFrame frame = new EmployeeSearchFrame();
                     frame.setVisible(true);
-                } catch (Exception e) {
+                } 
+                catch (Exception e) 
+                {
                     e.printStackTrace();
                 }
             }
@@ -51,7 +63,18 @@ public class EmployeeSearchFrame extends JFrame {
     /**
      * Create the EmployeeSearchFrame.
      */
-    public EmployeeSearchFrame() {
+    public EmployeeSearchFrame() throws IOException
+    {
+        //code for linking properties file
+        FileReader reader = new FileReader("database.props");
+        Properties properties = new Properties();
+        properties.load(reader);
+
+
+
+        
+
+        //stuff for the gui
         setTitle("Employee Search");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setBounds(100, 100, 450, 347);
@@ -76,17 +99,44 @@ public class EmployeeSearchFrame extends JFrame {
         JButton btnDBFill = new JButton("Fill");
         btnDBFill.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                // Hardcoded department and project names for demonstration
-                String[] dept = {"Headquarters", "Reorganization"};
-                String[] prj = {"ProductX", "ProductY", "ProductZ"};
+                
+                if(txtDatabase.getText() != null)
+                {
 
-                // Populate the department and project lists
-                for (int i = 0; i < dept.length; i++) {
-                    department.addElement(dept[i]);
+                    try
+                    {
+                        //properties variables
+                        String dbdriver = properties.getProperty("db.driver");
+                        String dbuser = properties.getProperty("db.user");
+                        String dbpassword = properties.getProperty("db.password");
+                        String dburl = properties.getProperty("db.url") + txtDatabase.getText() + "?useSSL=false";
+
+                        Class.forName(dbdriver).newInstance();
+                        connection = DriverManager.getConnection(dburl, dbuser, dbpassword);
+                        
+
+                    }
+                    catch(Exception ex)
+                    {
+                        textAreaEmployee.setText("Exception: " + ex.getMessage());
+                    }
+
                 }
-                for (int j = 0; j < prj.length; j++) {
-                    project.addElement(prj[j]);
+                else
+                {
+                    textAreaEmployee.setText("Error: must enter the name of the database to connect and search!");
                 }
+                // // Hardcoded department and project names for demonstration
+                // String[] dept = {"Headquarters", "Reorganization"};
+                // String[] prj = {"ProductX", "ProductY", "ProductZ"};
+
+                // // Populate the department and project lists
+                // for (int i = 0; i < dept.length; i++) {
+                //     department.addElement(dept[i]);
+                // }
+                // for (int j = 0; j < prj.length; j++) {
+                //     project.addElement(prj[j]);
+                // }
             }
         });
         btnDBFill.setFont(new Font("Times New Roman", Font.BOLD, 12));
