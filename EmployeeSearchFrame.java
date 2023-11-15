@@ -110,11 +110,37 @@ public class EmployeeSearchFrame extends JFrame {
                         String dbuser = properties.getProperty("db.user");
                         String dbpassword = properties.getProperty("db.password");
                         String dburl = properties.getProperty("db.url") + txtDatabase.getText() + "?useSSL=false";
-
+                        
+                        //create connection
                         Class.forName(dbdriver).newInstance();
                         connection = DriverManager.getConnection(dburl, dbuser, dbpassword);
                         
+                        //retrieve project names
+                        ResultSet result = connection.createStatement().executeQuery("SELECT * FROM PROJECT;");
+                        ArrayList<String> projectsList = new ArrayList<>();
+                        while(result.next())
+                            projectsList.add(result.getString("Pname"));
+                        Object[] prj = projectsList.toArray();
+                        
+                        //retrieve department names
+                        result = connection.createStatement().executeQuery("SELECT * FROM DEPARTMENT");
+                        ArrayList<String> departmentsList = new ArrayList<>();
+                        while(result.next())
+                            departmentsList.add(result.getString("Dname"));
+                        Object[] dept = departmentsList.toArray();
 
+                        // Populate the department and project lists
+                        for (int i = 0; i < dept.length; i++) {
+                            department.addElement((String) dept[i]);
+                        }
+                        for (int j = 0; j < prj.length; j++) {
+                            project.addElement((String) prj[j]);
+                        }
+
+                        connection.close();
+
+                        
+ 
                     }
                     catch(Exception ex)
                     {
@@ -126,17 +152,6 @@ public class EmployeeSearchFrame extends JFrame {
                 {
                     textAreaEmployee.setText("Error: must enter the name of the database to connect and search!");
                 }
-                // // Hardcoded department and project names for demonstration
-                // String[] dept = {"Headquarters", "Reorganization"};
-                // String[] prj = {"ProductX", "ProductY", "ProductZ"};
-
-                // // Populate the department and project lists
-                // for (int i = 0; i < dept.length; i++) {
-                //     department.addElement(dept[i]);
-                // }
-                // for (int j = 0; j < prj.length; j++) {
-                //     project.addElement(prj[j]);
-                // }
             }
         });
         btnDBFill.setFont(new Font("Times New Roman", Font.BOLD, 12));
