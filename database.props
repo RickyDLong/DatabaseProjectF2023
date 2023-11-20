@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<properties>
+    <!-- Property Definitions -->
+    db.url=jdbc:mysql://cis-lonsmith-student2.ccr8ibhqw8qf.us-east-2.rds.amazonaws.com/
+    db.user=longrd
+    db.password=Learn2Pa$$
+    db.driver=com.mysql.jdbc.Driver
+</properties>

@@ -1,31 +1,35 @@
-/**
- * Author: Lon Smith, Ph.D.
- * Description: This is the framework for the database program. Additional requirements and functionality
- *    are to be built by you and your group.
- */
-
-
 import java.awt.EventQueue;
-import javax.swing.JFrame;
-import javax.swing.JPanel;
-import javax.swing.border.EmptyBorder;
-import javax.swing.JLabel;
 import java.awt.Font;
-import javax.swing.JTextField;
-import javax.swing.DefaultListModel;
-import javax.swing.JButton;
-import javax.swing.JList;
-import javax.swing.JCheckBox;
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.FileReader;
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.Properties;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JFrame;
+import javax.swing.JList;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
-import java.util.Properties;
-import java.io.FileReader;
-import java.sql.*;
-import java.io.IOException;
-import java.util.ArrayList;
+import javax.swing.JTextField;
+import javax.swing.border.EmptyBorder;
+import javax.swing.JLabel;
+import javax.swing.DefaultListModel;
 
+/**
+ * This program provides a GUI interface to search an employee database 
+ * and display results.
+ *
+ * The database connection information is read from a properties file. 
+ * The user enters a database name, and can select departments and projects
+ * to search on. The results are displayed in a text area via GUI.
+ */
 public class EmployeeSearchFrame extends JFrame {
 
     private static final long serialVersionUID = 1L;
@@ -36,24 +40,20 @@ public class EmployeeSearchFrame extends JFrame {
     private JList<String> lstProject;
     private DefaultListModel<String> project = new DefaultListModel<String>();
     private JTextArea textAreaEmployee;
-    Connection connection = null;
+    private Connection connection = null;
 
     /**
-     * The main method to launch the application.
+     * Main method to launch the application.
+     * 
+     * @param args the command-line arguments
      */
-    public static void main(String[] args) 
-    {
-        EventQueue.invokeLater(new Runnable() 
-        {
-            public void run() 
-            {
-                try 
-                {
+    public static void main(String[] args) {
+        EventQueue.invokeLater(new Runnable() {
+            public void run() {
+                try {
                     EmployeeSearchFrame frame = new EmployeeSearchFrame();
                     frame.setVisible(true);
-                } 
-                catch (Exception e) 
-                {
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
@@ -62,19 +62,16 @@ public class EmployeeSearchFrame extends JFrame {
 
     /**
      * Create the EmployeeSearchFrame.
+     * 
+     *  @throws IOException if an I/O error occurs while reading the properties file
      */
-    public EmployeeSearchFrame() throws IOException
-    {
-        //code for linking properties file
+    public EmployeeSearchFrame() throws IOException {
+        // Code for linking properties file
         FileReader reader = new FileReader("database.props");
         Properties properties = new Properties();
         properties.load(reader);
 
-
-
-        
-
-        //stuff for the gui
+        // Set up the GUI
         setTitle("Employee Search");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setBounds(100, 100, 450, 347);
@@ -99,34 +96,34 @@ public class EmployeeSearchFrame extends JFrame {
         JButton btnDBFill = new JButton("Fill");
         btnDBFill.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                
-                if(txtDatabase.getText() != null)
-                {
-
-                    try
-                    {
-                        //properties variables
+                if (txtDatabase.getText() != null) {
+                    try {
+                        // Properties variables
                         String dbdriver = properties.getProperty("db.driver");
                         String dbuser = properties.getProperty("db.user");
                         String dbpassword = properties.getProperty("db.password");
                         String dburl = properties.getProperty("db.url") + txtDatabase.getText() + "?useSSL=false";
-                        
-                        //create connection
-                        Class.forName(dbdriver).newInstance();
+
+                        // Create connection
+                        Class.forName(dbdriver);
                         connection = DriverManager.getConnection(dburl, dbuser, dbpassword);
-                        
-                        //retrieve project names
-                        ResultSet result = connection.createStatement().executeQuery("SELECT * FROM PROJECT;");
+
+                        // Retrieve project names
+                        String projectQuery = "SELECT * FROM PROJECT;";
+                        ResultSet result = connection.createStatement().executeQuery(projectQuery);
                         ArrayList<String> projectsList = new ArrayList<>();
-                        while(result.next())
+                        while (result.next()) {
                             projectsList.add(result.getString("Pname"));
+                        }
                         Object[] prj = projectsList.toArray();
-                        
-                        //retrieve department names
-                        result = connection.createStatement().executeQuery("SELECT * FROM DEPARTMENT");
+
+                        // Retrieve department names
+                        String departmentQuery = "SELECT * FROM DEPARTMENT";
+                        result = connection.createStatement().executeQuery(departmentQuery);
                         ArrayList<String> departmentsList = new ArrayList<>();
-                        while(result.next())
+                        while (result.next()) {
                             departmentsList.add(result.getString("Dname"));
+                        }
                         Object[] dept = departmentsList.toArray();
 
                         // Populate the department and project lists
@@ -138,18 +135,10 @@ public class EmployeeSearchFrame extends JFrame {
                         }
 
                         connection.close();
-
-                        
- 
-                    }
-                    catch(Exception ex)
-                    {
+                    } catch (Exception ex) {
                         textAreaEmployee.setText("Exception: " + ex.getMessage());
                     }
-
-                }
-                else
-                {
+                } else {
                     textAreaEmployee.setText("Error: must enter the name of the database to connect and search!");
                 }
             }
@@ -207,36 +196,107 @@ public class EmployeeSearchFrame extends JFrame {
         // Button to perform a search
         JButton btnSearch = new JButton("Search");
         btnSearch.addActionListener(new ActionListener() {
+            /**
+             * Performs a search based on the selected departments and projects.
+             *
+             * @param e the action event
+             */
             public void actionPerformed(ActionEvent e) {
-                // For demonstration, display hardcoded employee names in the text area
-                textAreaEmployee.setText("John Smith\nFranklin Wong");
+                StringBuilder queryBuilder = new StringBuilder("SELECT * FROM EMPLOYEE WHERE ");
+
+                // Check if "Not" checkbox for Department is selected
+                if (chckbxNotDept.isSelected()) {
+                    queryBuilder.append("NOT ");
+                }
+
+                // Build the IN clause for selected departments
+                queryBuilder.append("Dname IN (");
+                for (int i = 0; i < lstDepartment.getSelectedValuesList().size(); i++) {
+                    queryBuilder.append("'");
+                    queryBuilder.append(lstDepartment.getSelectedValuesList().get(i));
+                    queryBuilder.append("'");
+                    if (i < lstDepartment.getSelectedValuesList().size() - 1) {
+                        queryBuilder.append(", ");
+                    }
+                }
+                queryBuilder.append(") ");
+
+                // Check if "Not" checkbox for Project is selected
+                if (chckbxNotProject.isSelected()) {
+                    queryBuilder.append("AND NOT ");
+                } else {
+                    queryBuilder.append("AND ");
+                }
+
+                // Build the IN clause for selected projects
+                queryBuilder.append("Pname IN (");
+                for (int i = 0; i < lstProject.getSelectedValuesList().size(); i++) {
+                    queryBuilder.append("'");
+                    queryBuilder.append(lstProject.getSelectedValuesList().get(i));
+                    queryBuilder.append("'");
+                    if (i < lstProject.getSelectedValuesList().size() - 1) {
+                        queryBuilder.append(", ");
+                    }
+                }
+                queryBuilder.append(")");
+
+                try {
+                    // Establish the database connection
+                    Class.forName(properties.getProperty("db.driver")).newInstance();
+                    connection = DriverManager.getConnection(properties.getProperty("db.url") + txtDatabase.getText() + "?useSSL=false",
+                            properties.getProperty("db.user"), properties.getProperty("db.password"));
+
+                    // Execute the query
+                    Statement statement = connection.createStatement();
+                    ResultSet resultSet = statement.executeQuery(queryBuilder.toString());
+
+                    // Display the results in the text area
+                    StringBuilder resultText = new StringBuilder();
+                    while (resultSet.next()) {
+                        resultText.append(resultSet.getString("FName")).append("\n");
+                    }
+                    textAreaEmployee.setText(resultText.toString());
+
+                    // Close the resources
+                    resultSet.close();
+                    statement.close();
+                    connection.close();
+                } catch (Exception ex) {
+                    textAreaEmployee.setText("Exception: " + ex.getMessage());
+                }
             }
         });
-        btnSearch.setBounds(80, 276, 89, 23);
-        contentPane.add(btnSearch);
+    btnSearch.setBounds(80, 276, 89, 23);
+    contentPane.add(btnSearch);
 
-        // Button to clear the text area
-        JButton btnClear = new JButton("Clear");
-        btnClear.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                // Clear the text area
-                textAreaEmployee.setText("");
-                // Clear the department and project lists
-                department.removeAllElements();
-                project.removeAllElements();
-                // Uncheck the "Not" checkboxes
-                chckbxNotDept.setSelected(false);
-                chckbxNotProject.setSelected(false);
-            }
-        });
-        btnClear.setBounds(236, 276, 89, 23);
-        contentPane.add(btnClear);
+    // Button to clear the text area
+    JButton btnClear = new JButton("Clear");
+    btnClear.addActionListener(new ActionListener() {
+        /**
+         * Clears the text area and resets the department and project lists.
+         *
+         * @param e the action event
+         */
+        public void actionPerformed(ActionEvent e) {
+            // Clear the text area
+            textAreaEmployee.setText("");
+            // Clear the department and project lists
+            department.removeAllElements();
+            project.removeAllElements();
+            // Uncheck the "Not" checkboxes
+            chckbxNotDept.setSelected(false);
+            chckbxNotProject.setSelected(false);
+        }
+    });
+    btnClear.setBounds(236, 276, 89, 23);
+    contentPane.add(btnClear);
 
-        // Text area to display employee names with scrollable view
-        JScrollPane employeeScrollPane = new JScrollPane();
-        employeeScrollPane.setBounds(36, 197, 339, 68);
-        contentPane.add(employeeScrollPane);
-        textAreaEmployee = new JTextArea();
-        employeeScrollPane.setViewportView(textAreaEmployee);
-    }
+    // Text area to display employee names with scrollable view
+    JScrollPane employeeScrollPane = new JScrollPane();
+    employeeScrollPane.setBounds(36, 197, 339, 68);
+    contentPane.add(employeeScrollPane);
+    textAreaEmployee = new JTextArea();
+    employeeScrollPane.setViewportView(textAreaEmployee);
 }
+}
+
